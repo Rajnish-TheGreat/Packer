@@ -5,18 +5,30 @@ from datetime import datetime
 def lambda_handler(event, context):
     # Retrieve the list of instances in the ASG
     autoscaling = boto3.client('autoscaling')
-    response = autoscaling.describe_auto_scaling_groups(AutoScalingGroupNames=['test-asg'])
+    response = autoscaling.describe_auto_scaling_groups(AutoScalingGroupNames=['eks-EKS-node-28c5ae11-6c8d-e4dc-5b14-54aec599cab6'])
     instances = response['AutoScalingGroups'][0]['Instances']
 
     # Create AMI for the first running instance in the ASG
     if instances:
         instance_id = instances[0]['InstanceId']
-        ami_name = f'AMI for instance {datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}'
+        ami_name = f'AMI for instance pocRajnish {datetime.now().strftime("%Y-%m-%d-%H-%M-%S")}'
         response = create_ami(instance_id, ami_name)
         ami_id = response['ImageId']
+        response_message = {
+            "status": "AMI created",
+            "AMI_ID": ami_id
+        }
         print(f'Created AMI: {ami_id}')
+        return {
+            "statusCode": 200,
+            "body": json.dumps(response_message)
+        }
     else:
         print('No running instances found in the ASG')
+        return {
+            "statusCode": 200,
+            "body": "No running instances found in the ASG"
+        }
 
 def create_ami(instance_id, ami_name):
     # Create AMI with a unique name
@@ -41,4 +53,3 @@ def create_ami(instance_id, ami_name):
     )
     
     return response
-
